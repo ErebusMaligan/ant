@@ -16,12 +16,14 @@
 	    <![CDATA[
 	        values = attributes.get("value").split(attributes.get("delimiter"));
 			var path = "";
+			var libs = "";
 			var names = "";
 			var wRoot = "../..";
 			var pRoot = "../";
 			for ( i = 0; i < values.length - 1; i++ ) {
 				if ( i > 1 ) {
 					var p = new String( values[ i ] );
+					var l = p.substr( p.indexOf( "/", p.indexOf( "/" ) + 1 ) + 1 ); //start at the second slash
 		            names = names.concat( p.substr( p.lastIndexOf( "/" ) + 1 ) + " " );
 					var c = p.substring( 0, 1 );
 					if ( c == "/" ) {
@@ -30,8 +32,10 @@
 						p = pRoot + p;
 					}
 					path = path.concat( p + " " );
+					libs = libs.concat( l + " " );
 				}
 	         }
+			project.setNewProperty("libspath", libs);
 		    project.setNewProperty("jarpath", path);
 			project.setNewProperty("jarcount", i - 2);
 			project.setNewProperty("jarnames", names );
@@ -48,7 +52,8 @@
 		<xmlproperty file=".classpath" collapseAttributes="true" includeSemanticAttribute="true" delimiter=";"/>
 		<!-- <echoproperties regex=".*classpath*"/> -->
 		<split value="${classpath.classpathentry.path}" delimiter=";" />
-		<echoproperties regex="jarpath"/>	
+		<echoproperties regex="jarpath"/>
+		<echoproperties regex="libspath"/>
 		<echoproperties regex="jarcount"/>
 		<echoproperties regex="jarnames"/>
 	</target>
@@ -74,11 +79,11 @@
 	</target>
 	
 	<target name="deployed" depends="jar">
-		<copy todir="${deployed.dir}/${apps.dir}/${jar.dir}">
+		<copy todir="${deployed.dir}/${apps.dir}/${jar.dir}" verbose="true">
 			<fileset dir="./${jar.dir}" />
 		</copy>
-		<copy todir="${deployed.dir}/${libs.name}">
-			<fileset dir="${lib.dir}" includes="${jarnames}"/>
+		<copy todir="${deployed.dir}/${libs.name}" verbose="true">
+			<fileset dir="${lib.dir}" includes="${libspath}"/>
 		</copy>
 	</target>
 	
