@@ -1,0 +1,99 @@
+<project name="Common" basedir="." default="jar">
+	<property name="source.dir"     value="src"/>
+	<property name="class.dir"      value="bin"/>
+	<property name="jar.dir"        value="run"/>
+	<property name="doc.dir"		value="doc"/>
+	<property name="libs.name"		value="libs"/>
+	<property name="lib.dir"		value="../${libs.name}"/>
+	<property name="deployed.dir"   value="../deployed/Tools"/>
+	<property name="apps.dir" value="Apps"/>
+	
+
+	<scriptdef name="split" language="javascript">
+	    <attribute name="value"/>
+	    <attribute name="delimiter"/>
+	    <attribute name="prefix"/>
+	    <![CDATA[
+	        values = attributes.get("value").split(attributes.get("delimiter"));
+			var path = "";
+			var names = "";
+			var wRoot = "../..";
+			var pRoot = "../";
+			for ( i = 0; i < values.length - 1; i++ ) {
+				if ( i > 1 ) {
+					var p = new String( values[ i ] );
+		            names = names.concat( p.substr( p.lastIndexOf( "/" ) + 1 ) + " " );
+					var c = p.substring( 0, 1 );
+					if ( c == "/" ) {
+						p = wRoot + p;
+					} else {
+						p = pRoot + p;
+					}
+					path = path.concat( p + " " );
+				}
+	         }
+		    project.setNewProperty("jarpath", path);
+			project.setNewProperty("jarcount", i - 2);
+			project.setNewProperty("jarnames", names );
+	     ]]>
+	</scriptdef>
+	
+	<target name="compile">
+		<delete file="${jar.dir}/${this.project}.jar"/>
+		<mkdir dir="${class.dir}"/>
+		<javac srcdir="${source.dir}" destdir="${class.dir}" includeantruntime="false"/>
+	</target>
+	
+	<target name="pre" description="build class files" depends="compile">
+		<xmlproperty file=".classpath" collapseAttributes="true" includeSemanticAttribute="true" delimiter=";"/>
+		<!-- <echoproperties regex=".*classpath*"/> -->
+		<split value="${classpath.classpathentry.path}" delimiter=";" />
+		<echoproperties regex="jarpath"/>	
+		<echoproperties regex="jarcount"/>
+		<echoproperties regex="jarnames"/>
+	</target>
+	
+	<target name="jar" depends="pre">
+		<mkdir dir="${jar.dir}"/>
+		<jar destfile="${jar.dir}/${this.project}.jar" basedir="${class.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}"/>
+				<attribute name="Class-Path" value="${jarpath}"/>
+			</manifest>
+		</jar>
+	</target>
+	
+	<target name="libjar" depends="pre" >
+		<mkdir dir="${jar.dir}"/>
+		<jar destfile="${jar.dir}/${this.project}.jar" basedir="${class.dir}">
+			<manifest>
+				<attribute name="Class-Path" value="${jarpath}"/>
+			</manifest>
+		</jar>
+		<copy file="${jar.dir}/${this.project}.jar" todir="${lib.dir}"/>
+	</target>
+	
+	<target name="deployed" depends="jar">
+		<copy todir="${deployed.dir}/${apps.dir}/${jar.dir}">
+			<fileset dir="./${jar.dir}" />
+		</copy>
+		<copy todir="${deployed.dir}/${libs.name}">
+			<fileset dir="${lib.dir}" includes="${jarnames}"/>
+		</copy>
+	</target>
+	
+	<target name="deployedLib" depends="jar">
+		<copy todir="${deployed.dir}/${libs.name}">
+			<fileset dir="./${jar.dir}" includes="*.jar"/>
+		</copy>
+	</target>
+	
+  	<target name="doc" description="generate documentation">
+    	<javadoc sourcepath="${source.dir}" destdir="${jar.dir}/${doc.dir}"/>
+  	</target>
+	
+	<target name="source" description="zip source">
+		<zip destfile="${jar.dir}/${this.project}_src.zip" basedir="${source.dir}"/>
+	</target>
+		
+</project>
