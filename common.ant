@@ -103,6 +103,7 @@
 	
 	<target name="release" description="zip entire run directory">
 		<copy file="LICENSE" todir="${jar.dir}" verbose="true"/>
+		<copy file="README.md" todir="$jar.dir}" verbose="true"/>
 		<zip destfile="${this.project}_release.zip" basedir="${jar.dir}"/>
 	</target>
 		
